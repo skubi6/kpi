@@ -81,6 +81,7 @@ export class ProjectSettings extends React.Component {
       sector: formAsset ? formAsset.settings.sector : null,
       country: formAsset ? formAsset.settings.country : null,
       'share-metadata': formAsset ? formAsset.settings['share-metadata'] : false,
+      'share-submit': formAsset ? formAsset.settings['share-submit'] : false,
       // steps
       currentStep: null,
       previousStep: null,
@@ -189,6 +190,11 @@ export class ProjectSettings extends React.Component {
     this.onAnyDataChange('share-metadata', evt.target.checked);
   }
 
+  onShareSubmitChange(evt) {
+    this.setState({'share-submit': evt.target.checked});
+    this.onAnyDataChange('share-submit', evt.target.checked);
+  }
+
   onImportUrlChange(value) {
     this.setState({
       importUrl: value,
@@ -283,7 +289,8 @@ export class ProjectSettings extends React.Component {
             description: '',
             sector: null,
             country: null,
-            'share-metadata': false
+            'share-metadata': false,
+            'share-submit': false
           })
         }).done((asset) => {
           resolve(asset);
@@ -302,7 +309,8 @@ export class ProjectSettings extends React.Component {
         description: this.state.description,
         sector: this.state.sector,
         country: this.state.country,
-        'share-metadata': this.state['share-metadata']
+        'share-metadata': this.state['share-metadata'],
+        'share-submit': this.state['share-submit']
       }),
       asset_type: 'survey',
     }).done((asset) => {
@@ -321,7 +329,8 @@ export class ProjectSettings extends React.Component {
           description: this.state.description,
           sector: this.state.sector,
           country: this.state.country,
-          'share-metadata': this.state['share-metadata']
+          'share-metadata': this.state['share-metadata'],
+          'share-submit': this.state['share-submit']
         }),
       }, {
         onComplete: () => {
@@ -358,6 +367,7 @@ export class ProjectSettings extends React.Component {
             sector: asset.settings.sector,
             country: asset.settings.country,
             'share-metadata': asset.settings['share-metadata'] || false,
+            'share-submit': asset.settings['share-submit'] || false,
           });
           this.resetApplyTemplateButton();
           this.displayStep(this.STEPS.PROJECT_DETAILS);
@@ -401,6 +411,7 @@ export class ProjectSettings extends React.Component {
                     sector: finalAsset.settings.sector,
                     country: finalAsset.settings.country,
                     'share-metadata': finalAsset.settings['share-metadata'],
+                    'share-submit': finalAsset.settings['share-submit'],
                     isImportFromURLPending: false
                   });
                   this.displayStep(this.STEPS.PROJECT_DETAILS);
@@ -445,6 +456,7 @@ export class ProjectSettings extends React.Component {
                     sector: finalAsset.settings.sector,
                     country: finalAsset.settings.country,
                     'share-metadata': finalAsset.settings['share-metadata'],
+                    'share-submit': finalAsset.settings['share-submit'],
                     isUploadFilePending: false
                   });
                   this.displayStep(this.STEPS.PROJECT_DETAILS);
@@ -719,6 +731,18 @@ export class ProjectSettings extends React.Component {
               {t('Help KoboToolbox improve this product by sharing the sector and country where this project will be deployed.')}
               &nbsp;
               {t('All the information is submitted anonymously, and will not include the project name or description listed above.')}
+            </label>
+          </bem.FormModal__item>
+
+          <bem.FormModal__item m='submit-share'>
+            <input
+              type='checkbox'
+              id='share-submit'
+              checked={this.state['share-submit']}
+              onChange={this.onShareSubmitChange}
+            />
+            <label htmlFor='share-submit'>
+              {t('Accept data from any authorized user.')}
             </label>
           </bem.FormModal__item>
 

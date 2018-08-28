@@ -140,7 +140,7 @@ export class DataTable extends React.Component {
   }
   _prepColumns(data) {
     var excludes = ['_xform_id_string', '_attachments', '_notes', '_bamboo_dataset_id', '_status',
-                    'formhub/uuid', '_tags', '_geolocation', '_submitted_by', 'meta/instanceID', 'meta/deprecatedID', '_validation_status'];
+                    'formhub/uuid', '_tags', '_geolocation', 'meta/instanceID', 'meta/deprecatedID', '_validation_status'];
 
     var uniqueKeys = Object.keys(data.reduce(function(result, obj) {
       return Object.assign(result, obj);
