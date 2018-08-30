@@ -10,6 +10,9 @@ from rest_framework.decorators import api_view
 from kpi.tasks import sync_kobocat_xforms, import_survey_drafts_from_dkobo
 from .models import FormBuilderPreference, ExtraUserDetail
 
+import requests
+from django.conf import settings
+
 # The `api_view` decorator allows authentication via DRF
 @api_view(['GET'])
 @login_required
@@ -57,11 +60,25 @@ class ExtraDetailRegistrationView(RegistrationView):
         into the JSON `data` field of an `ExtraUserDetail` object '''
         standard_fields = set(RegistrationForm().fields.keys())
         extra_fields = set(form.fields.keys()).difference(standard_fields)
-        # Don't save the user unless we successfully store the extra data
-        with transaction.atomic():
-            new_user = super(ExtraDetailRegistrationView, self).register(
-                request, form, *args, **kwargs)
-            extra_data = {k: form.cleaned_data[k] for k in extra_fields}
-            new_user.extra_details.data.update(extra_data)
-            new_user.extra_details.save()
-        return new_user
+
+        # recaptcha code
+        recaptcha_response = request.POST.get('g-recaptcha-response')
+        data = {
+            'secret': settings.RECAPTCHA_SECRET_KEY,
+            'response': recaptcha_response
+        }
+        r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=data)
+        result = r.json()
+
+        if result['success']:
+            # Don't save the user unless we successfully store the extra data
+            with transaction.atomic():
+                new_user = super(ExtraDetailRegistrationView, self).register(
+                    request, form, *args, **kwargs)
+                extra_data = {k: form.cleaned_data[k] for k in extra_fields}
+                new_user.extra_details.data.update(extra_data)
+                new_user.extra_details.save()
+            return new_user
+        else:
+            self.success_url = '/accounts/register/'
+            return False
