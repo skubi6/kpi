@@ -13,8 +13,6 @@ def external_service_tokens(request):
         out['intercom_app_id'] = settings.INTERCOM_APP_ID
     if settings.RAVEN_JS_DSN:
         out['raven_js_dsn'] = settings.RAVEN_JS_DSN
-    if settings.RECAPTCHA_SITE_KEY:
-        out['recaptcha_site_key'] = settings.RECAPTCHA_SITE_KEY
     return out
 
 
