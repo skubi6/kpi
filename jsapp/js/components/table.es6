@@ -161,7 +161,6 @@ export class DataTable extends React.Component {
       'formhub/uuid',
       '_tags',
       '_geolocation',
-      '_submitted_by',
       'meta/instanceID',
       'meta/deprecatedID',
       '_validation_status'

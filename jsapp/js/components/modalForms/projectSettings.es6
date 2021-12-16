@@ -66,6 +66,7 @@ class ProjectSettings extends React.Component {
       sector: formAsset ? formAsset.settings.sector : null,
       country: formAsset ? formAsset.settings.country : null,
       'share-metadata': formAsset ? formAsset.settings['share-metadata'] : false,
+      'share-submit': formAsset ? formAsset.settings['share-submit'] : false,
       // steps
       currentStep: null,
       previousStep: null,
@@ -190,10 +191,15 @@ class ProjectSettings extends React.Component {
     this.onAnyDataChange('share-metadata', isChecked);
   }
 
+  onShareSubmitChange(evt) {
+    this.setState({'share-submit': evt.target.checked});
+    this.onAnyDataChange('share-submit', evt.target.checked);
+  }
+
   onImportUrlChange(value) {
     this.setState({
       importUrl: value,
-      importUrlButtonEnabled: isAValidUrl(value),
+      importUrlButtonEnabled: value.length > 6 ? true : false,
       importUrlButton: t('Import')
     });
   }
@@ -405,7 +411,8 @@ class ProjectSettings extends React.Component {
             description: '',
             sector: null,
             country: null,
-            'share-metadata': false
+            'share-metadata': false,
+            'share-submit': false
           })
         }).done((asset) => {
           resolve(asset);
@@ -424,13 +431,14 @@ class ProjectSettings extends React.Component {
         description: this.state.description,
         sector: this.state.sector,
         country: this.state.country,
-        'share-metadata': this.state['share-metadata']
+        'share-metadata': this.state['share-metadata'],
+        'share-submit': this.state['share-submit']
       }),
       asset_type: 'survey',
     }).done((asset) => {
       this.goToFormBuilder(asset.uid);
     }).fail(function(r){
-      alertify.error(t('Error: new project could not be created.') + ` (code: ${r.statusText})`);
+      notify(t('Error: new project could not be created.') + ` (code: ${r.statusText})`);
     });
   }
 
@@ -443,7 +451,8 @@ class ProjectSettings extends React.Component {
           description: this.state.description,
           sector: this.state.sector,
           country: this.state.country,
-          'share-metadata': this.state['share-metadata']
+          'share-metadata': this.state['share-metadata'],
+          'share-submit': this.state['share-submit']
         }),
       }
     );
@@ -503,6 +512,7 @@ class ProjectSettings extends React.Component {
                     sector: finalAsset.settings.sector,
                     country: finalAsset.settings.country,
                     'share-metadata': finalAsset.settings['share-metadata'],
+                    'share-submit': finalAsset.settings['share-submit'],
                     isImportFromURLPending: false
                   });
                   this.displayStep(this.STEPS.PROJECT_DETAILS);
@@ -555,6 +565,7 @@ class ProjectSettings extends React.Component {
                     sector: finalAsset.settings.sector,
                     country: finalAsset.settings.country,
                     'share-metadata': finalAsset.settings['share-metadata'],
+                    'share-submit': finalAsset.settings['share-submit'],
                     isUploadFilePending: false
                   });
                   this.displayStep(this.STEPS.PROJECT_DETAILS);
@@ -618,7 +629,7 @@ class ProjectSettings extends React.Component {
 
   renderStepFormSource() {
     return (
-      <bem.FormModal__form className='project-settings project-settings--form-source'>
+      <bem.FormModal__item className='project-settings project-settings--form-source'>
         {this.props.context !== PROJECT_SETTINGS_CONTEXTS.REPLACE &&
           <bem.Modal__subheader>
             {t('Choose one of the options below to continue. You will be prompted to enter name and other details in further steps.')}
@@ -651,35 +662,34 @@ class ProjectSettings extends React.Component {
             this.renderChooseTemplateButton()
           }
         </bem.FormModal__item>
-      </bem.FormModal__form>
+      </bem.FormModal__item>
     );
   }
 
   renderStepChooseTemplate() {
     return (
-      <bem.FormModal__form className='project-settings project-settings--choose-template'>
+      <bem.FormModal__item className='project-settings project-settings--choose-template'>
         <TemplatesList onSelectTemplate={this.onTemplateChange}/>
 
         <bem.Modal__footer>
-          {this.renderBackButton()}
-
           <bem.Modal__footerButton
             m='primary'
-            type='submit'
             onClick={this.applyTemplate}
             disabled={!this.state.chosenTemplateUid || this.state.isApplyTemplatePending}
             className='mdl-js-button'
           >
             {this.state.applyTemplateButton}
           </bem.Modal__footerButton>
+
+          {this.renderBackButton()}
         </bem.Modal__footer>
-      </bem.FormModal__form>
+      </bem.FormModal__item>
     );
   }
 
   renderStepUploadFile() {
     return (
-      <bem.FormModal__form className='project-settings project-settings--upload-file'>
+      <bem.FormModal__item className='project-settings project-settings--upload-file'>
         <bem.Modal__subheader>
           {t('Import an XLSForm from your computer.')}
         </bem.Modal__subheader>
@@ -706,13 +716,13 @@ class ProjectSettings extends React.Component {
         <bem.Modal__footer>
           {this.renderBackButton()}
         </bem.Modal__footer>
-      </bem.FormModal__form>
+      </bem.FormModal__item>
     );
   }
 
   renderStepImportUrl() {
     return (
-      <bem.FormModal__form className='project-settings project-settings--import-url'>
+      <bem.FormModal__item className='project-settings project-settings--import-url'>
         <div className='intro'>
           {t('Enter a valid XLSForm URL in the field below.')}<br/>
           <a href={formViaUrlHelpLink} target='_blank'>
@@ -720,30 +730,32 @@ class ProjectSettings extends React.Component {
           </a>
         </div>
 
-        <bem.FormModal__item>
-          <TextBox
-            type='url'
-            label={t('URL')}
-            placeholder='https://'
-            value={this.state.importUrl}
-            onChange={this.onImportUrlChange}
-          />
-        </bem.FormModal__item>
+        <label htmlFor='url'>
+          {t('URL')}
+        </label>
+
+        <DebounceInput
+          type='text'
+          id='importUrl'
+          debounceTimeout={300}
+          value={this.state.importUrl}
+          placeholder='https://'
+          onChange={event => this.onImportUrlChange(event.target.value)}
+        />
 
         <bem.Modal__footer>
-          {this.renderBackButton()}
-
           <bem.Modal__footerButton
             m='primary'
-            type='submit'
             onClick={this.importFromURL}
             disabled={!this.state.importUrlButtonEnabled}
             className='mdl-js-button'
           >
             {this.state.importUrlButton}
           </bem.Modal__footerButton>
+
+          {this.renderBackButton()}
         </bem.Modal__footer>
-      </bem.FormModal__form>
+      </bem.FormModal__item>
     );
   }
 
@@ -846,16 +858,22 @@ class ProjectSettings extends React.Component {
             />
           </bem.FormModal__item>
 
+          <bem.FormModal__item m='submit-share'>
+            <input
+              type='checkbox'
+              id='share-submit'
+              checked={this.state['share-submit']}
+              onChange={this.onShareSubmitChange}
+            />
+            <label htmlFor='share-submit'>
+              {t('Accept data from any authorized user.')}
+            </label>
+          </bem.FormModal__item>
+
           {(this.props.context === PROJECT_SETTINGS_CONTEXTS.NEW || this.props.context === PROJECT_SETTINGS_CONTEXTS.REPLACE) &&
             <bem.Modal__footer>
-              {/* Don't allow going back if asset already exist */}
-              {!this.state.formAsset &&
-                this.renderBackButton()
-              }
-
               <bem.Modal__footerButton
                 m='primary'
-                type='submit'
                 onClick={this.handleSubmit}
                 className='mdl-js-button'
                 disabled={this.state.isSubmitPending}
@@ -864,6 +882,11 @@ class ProjectSettings extends React.Component {
                 {!this.state.isSubmitPending && this.props.context === PROJECT_SETTINGS_CONTEXTS.NEW && t('Create project')}
                 {!this.state.isSubmitPending && this.props.context === PROJECT_SETTINGS_CONTEXTS.REPLACE && t('Save')}
               </bem.Modal__footerButton>
+
+              {/* Don't allow going back if asset already exist */}
+              {!this.state.formAsset &&
+                this.renderBackButton()
+              }
             </bem.Modal__footer>
           }
 
@@ -930,7 +953,6 @@ class ProjectSettings extends React.Component {
       return (
         <bem.Modal__footerButton
           m='back'
-          type='button'
           onClick={this.displayPreviousStep}
           disabled={isBackButtonDisabled}
         >

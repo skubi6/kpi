@@ -34,6 +34,7 @@ def sitewide_messages(request):
         if sitewide_message is not None:
             return {"welcome_message": sitewide_message}
 
+
     return {}
 
 
