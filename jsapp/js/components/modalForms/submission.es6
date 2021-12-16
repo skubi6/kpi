@@ -247,7 +247,7 @@ class Submission extends React.Component {
         else
           return submissionValue;
         break;
-      case 'select_multiple':
+      case 'select_multiple': {
         var responses = submissionValue.split(' ');
         var list = responses.map((r)=> {
           const choice = choices.find(x => x.list_name == q.select_from_list_name && x.name === r);
@@ -257,18 +257,20 @@ class Submission extends React.Component {
             return <li key={r}>{r}</li>;
         })
         return <ul>{list}</ul>;
+	}
         break;
       case 'image':
       case 'audio':
       case 'video':
         return this.renderAttachment(submissionValue, q.type);
         break;
-      case 'begin_repeat':
+      case 'begin_repeat': {
         const list = submissionValue.map((r) => {
           const stringified = JSON.stringify(r);
           return <li key={stringified}>{stringified}</li>
         });
         return <ul>{list}</ul>
+	}
         break;
       default:
         return submissionValue;
