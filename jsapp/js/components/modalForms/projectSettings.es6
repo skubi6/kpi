@@ -18,6 +18,7 @@ import mixins from 'js/mixins';
 import TemplatesList from 'js/components/templatesList';
 import actions from 'js/actions';
 import {dataInterface} from 'js/dataInterface';
+import {DebounceInput} from 'react-debounce-input';
 import {
   t,
   validFileTypes,
