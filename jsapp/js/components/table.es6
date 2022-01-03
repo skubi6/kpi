@@ -1,10 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import autoBind from 'react-autobind';
 import Reflux from 'reflux';
 import reactMixin from 'react-mixin';
 import _ from 'underscore';
 import $ from 'jquery';
+import enketoHandler from 'js/enketoHandler';
 import {dataInterface} from '../dataInterface';
 import Checkbox from './checkbox';
 import actions from '../actions';
@@ -13,24 +13,23 @@ import ui from '../ui';
 import stores from '../stores';
 import mixins from '../mixins';
 import alertify from 'alertifyjs';
-
-import ReactTable from 'react-table'
+import ReactTable from 'react-table';
 import Select from 'react-select';
 import {DebounceInput} from 'react-debounce-input';
-
 import {
   VALIDATION_STATUSES,
   VALIDATION_STATUSES_LIST,
   MODAL_TYPES
 } from '../constants';
-
 import {
-  assign,
   t,
-  log,
   notify,
   formatTimeDate
 } from '../utils';
+
+const NOT_ASSIGNED = 'validation_status_not_assigned';
+
+export const SUBMISSION_LINKS_ID = '__SubmissionLinks';
 
 export class DataTable extends React.Component {
   constructor(props){
@@ -76,7 +75,7 @@ export class DataTable extends React.Component {
         if (f.id === '_id') {
           filterQuery += `"${f.id}":{"$in":[${f.value}]}`;
         } else if (f.id === '_validation_status.uid') {
-          filterQuery += `"${f.id}":"${f.value}"`;
+          (f.value === NOT_ASSIGNED) ? filterQuery += `"${f.id}":null` : filterQuery += `"${f.id}":"${f.value}"`;
         } else {
           filterQuery += `"${f.id}":{"$regex":"${f.value}","$options":"i"}`;
         }
@@ -107,7 +106,7 @@ export class DataTable extends React.Component {
           selectAll: false,
           tableData: data,
           submissionPager: false
-        })
+        });
         this._prepColumns(data);
       } else {
         if (filterQuery.length) {
@@ -130,25 +129,30 @@ export class DataTable extends React.Component {
     });
   }
   getValidationStatusOption(originalRow) {
-    if (originalRow._validation_status.uid) {
+    if (originalRow._validation_status && originalRow._validation_status.uid) {
       return VALIDATION_STATUSES[originalRow._validation_status.uid];
     } else {
-      return null;
+      return VALIDATION_STATUSES.no_status;
     }
   }
   onValidationStatusChange(sid, index, evt) {
     const _this = this;
-    const data = {'validation_status.uid': evt.value};
-    dataInterface.updateSubmissionValidationStatus(_this.props.asset.uid, sid, data).done((result) => {
-      if (result.uid) {
-        _this.state.tableData[index]._validation_status = result.uid;
+
+    if (evt.value === null) {
+      dataInterface.removeSubmissionValidationStatus(_this.props.asset.uid, sid).done((result) => {
+        _this.state.tableData[index]._validation_status = {};
         _this.setState({tableData: _this.state.tableData});
-      } else {
-        console.error('error updating validation status');
-      }
-    }).fail((error)=>{
-      console.error(error);
-    });
+      }).fail(console.error);
+    } else {
+      dataInterface.updateSubmissionValidationStatus(_this.props.asset.uid, sid, {'validation_status.uid': evt.value}).done((result) => {
+        if (result.uid) {
+          _this.state.tableData[index]._validation_status = result;
+          _this.setState({tableData: _this.state.tableData});
+        } else {
+          console.error('error updating validation status');
+        }
+      }).fail(console.error);
+    }
   }
 
   _prepColumns(data) {
@@ -172,7 +176,11 @@ export class DataTable extends React.Component {
 
     const surveyKeys = [];
     this.props.asset.content.survey.forEach((row) => {
-      surveyKeys.push(row.$autoname);
+      if (row.name) {
+        surveyKeys.push(row.name);
+      } else if (row.$autoname) {
+        surveyKeys.push(row.$autoname);
+      }
     });
 
     // make sure the survey columns are displayed, even if current data's
@@ -245,7 +253,7 @@ export class DataTable extends React.Component {
       Header: '',
       accessor: 'sub-link',
       index: '__1',
-      id: '__SubmissionLinks',
+      id: SUBMISSION_LINKS_ID,
       minWidth: userCanSeeEditIcon ? 75 : 45,
       filterable: false,
       sortable: false,
@@ -258,8 +266,12 @@ export class DataTable extends React.Component {
           </span>
 
           {userCanSeeEditIcon &&
-            <span onClick={this.launchEditSubmission} data-sid={row.original._id}
-                  className='table-link' data-tip={t('Edit')}>
+            <span
+              onClick={this.launchEditSubmission.bind(this)}
+              data-sid={row.original._id}
+              className='table-link'
+              data-tip={t('Edit')}
+            >
               <i className='k-icon k-icon-edit'/>
             </span>
           }
@@ -288,7 +300,7 @@ export class DataTable extends React.Component {
           <option value=''>Show All</option>
           {VALIDATION_STATUSES_LIST.map((item, n) => {
             return (
-              <option value={item.value} key={n}>{item.label}</option>
+              <option value={(item.value === null) ? NOT_ASSIGNED : item.value} key={n}>{item.label}</option>
             );
           })}
         </select>,
@@ -412,7 +424,11 @@ export class DataTable extends React.Component {
                 return formatTimeDate(row.value);
               }
             }
-            return typeof(row.value) == 'object' ? '' : row.value;
+            if (typeof(row.value) == 'object' || row.value === undefined) {
+              return '';
+            } else {
+              return row.value;
+            }
           }
       });
 
@@ -420,7 +436,7 @@ export class DataTable extends React.Component {
 
     columns.sort(function(a, b) {
       return a.index.localeCompare(b.index, 'en', {numeric: true});
-    })
+    });
 
     let selectedColumns = false,
         frozenColumn = false;
@@ -446,7 +462,7 @@ export class DataTable extends React.Component {
       '_id',
       '_uuid',
       '_submission_time'
-    ]
+    ];
 
     if (settings['data-table'] && settings['data-table']['frozen-column']) {
       frozenColumn = settings['data-table']['frozen-column'];
@@ -493,7 +509,7 @@ export class DataTable extends React.Component {
         col.className = col.className ? `frozen ${col.className}` : 'frozen';
         col.headerClassName = 'frozen';
       }
-    })
+    });
 
     // prepare list of selected columns, if configured
     if (settings['data-table'] && settings['data-table']['selected-columns']) {
@@ -505,7 +521,7 @@ export class DataTable extends React.Component {
 
       selectedColumns = columns.filter((el) => {
         // always include edit/preview links column
-        if (el.id == '__SubmissionLinks')
+        if (el.id == SUBMISSION_LINKS_ID)
           return true;
 
         // include multi-select checkboxes if validation status is visible
@@ -513,8 +529,8 @@ export class DataTable extends React.Component {
         if (el.id == '__SubmissionCheckbox' && selCos.includes('_validation_status.uid'))
           return true;
 
-        return selCos.includes(el.id) !== false}
-      );
+        return selCos.includes(el.id) !== false;
+      });
     }
 
     this.setState({
@@ -614,16 +630,17 @@ export class DataTable extends React.Component {
     this.setState({isFullscreen: !this.state.isFullscreen});
   }
   componentDidMount() {
-    this.listenTo(actions.resources.updateSubmissionValidationStatus.completed, this.refreshSubmission);
+    this.listenTo(actions.resources.updateSubmissionValidationStatus.completed, this.refreshSubmissionValidationStatus);
+    this.listenTo(actions.resources.removeSubmissionValidationStatus.completed, this.refreshSubmissionValidationStatus);
     this.listenTo(actions.table.updateSettings.completed, this.onTableUpdateSettingsCompleted);
     this.listenTo(stores.pageState, this.onPageStateUpdated);
   }
-  refreshSubmission(result, sid) {
+  refreshSubmissionValidationStatus(result, sid) {
     if (sid) {
       var subIndex = this.state.tableData.findIndex(x => x._id === parseInt(sid));
       if (typeof subIndex !== 'undefined' && this.state.tableData[subIndex]) {
         var newData = this.state.tableData;
-        newData[subIndex]._validation_status = result;
+        newData[subIndex]._validation_status = result || {};
         this.setState({tableData: newData});
         this._prepColumns(newData);
       }
@@ -657,7 +674,7 @@ export class DataTable extends React.Component {
 
     tableData.forEach(function(r) {
       ids.push(r._id);
-    })
+    });
 
     stores.pageState.showModal({
       type: MODAL_TYPES.SUBMISSION,
@@ -681,20 +698,7 @@ export class DataTable extends React.Component {
     });
   }
   launchEditSubmission (evt) {
-    let el = $(evt.target).closest('[data-sid]').get(0),
-        uid = this.props.asset.uid,
-        newWin = window.open('', '_blank');
-    const sid = el.getAttribute('data-sid');
-
-    dataInterface.getEnketoEditLink(uid, sid).done((editData) => {
-      this.setState({ promptRefresh: true });
-      if (editData.url) {
-        newWin.location = editData.url;
-      } else {
-        newWin.close();
-        notify(t('There was an error loading Enketo.'));
-      }
-    });
+    enketoHandler.editSubmission(this.props.asset.uid, evt.currentTarget.dataset.sid);
   }
   onPageStateUpdated(pageState) {
     if (!pageState.modal)
@@ -750,49 +754,46 @@ export class DataTable extends React.Component {
       } else {
         delete s[r._id];
       }
-    })
+    });
 
     this.setState({
       selectedRows: s,
       selectAll: false
     });
   }
-  bulkUpdateStatus(evt) {
-    const val = evt.target.getAttribute('data-value'),
-          selectAll = this.state.selectAll;
-    var d = null;
+  onBulkUpdateStatus(evt) {
+    const val = evt.target.getAttribute('data-value');
+    const selectAll = this.state.selectAll;
+    const data = {};
+    let selectedCount;
+    // setting empty value requires deleting the statuses with different API call
+    const apiFn = val === null ? dataInterface.bulkRemoveSubmissionsValidationStatus : dataInterface.patchSubmissions;
 
-    if (!selectAll) {
-      d = {
-        submissions_ids: Object.keys(this.state.selectedRows),
-        'validation_status.uid': val
-      };
-    } else {
-      const f = this.state.fetchState.filtered;
-      if (f.length) {
-        d = {
-          query: {},
-          'validation_status.uid': val
-        };
-        f.forEach(function(z) {
-          d.query[z.id] = z.value;
+    if (selectAll) {
+      if (this.state.fetchState.filtered.length) {
+        data.query = {};
+        data['validation_status.uid'] = val;
+        this.state.fetchState.filtered.map((filteredItem) => {
+          data.query[filteredItem.id] = filteredItem.value;
         });
       } else {
-        d = {
-          confirm: true,
-          'validation_status.uid': val
-        };
+        data.confirm = true;
+        data['validation_status.uid'] = val;
       }
+      selectedCount = this.state.resultsTotal;
+    } else {
+      data.submissions_ids = Object.keys(this.state.selectedRows);
+      data['validation_status.uid'] = val;
+      selectedCount = data.submissions_ids.length;
     }
 
-    let dialog = alertify.dialog('confirm');
-    const sel = this.state.selectAll ? this.state.resultsTotal : Object.keys(this.state.selectedRows).length;
-    let opts = {
+    const dialog = alertify.dialog('confirm');
+    const opts = {
       title: t('Update status of selected submissions'),
-      message: t('You have selected ## submissions. Are you sure you would like to update their status? This action is irreversible.').replace('##', sel),
+      message: t('You have selected ## submissions. Are you sure you would like to update their status? This action is irreversible.').replace('##', selectedCount),
       labels: {ok: t('Update Validation Status'), cancel: t('Cancel')},
       onok: (evt, val) => {
-        dataInterface.patchSubmissions(this.props.asset.uid, d).done((res) => {
+        apiFn(this.props.asset.uid, data).done((res) => {
           this.fetchData(this.state.fetchState, this.state.fetchInstance);
           this.setState({loading: true});
         }).fail((jqxhr)=> {
@@ -800,9 +801,7 @@ export class DataTable extends React.Component {
           alertify.error(t('Failed to update status.'));
         });
       },
-      oncancel: () => {
-        dialog.destroy();
-      }
+      oncancel: dialog.destroy
     };
     dialog.set(opts).show();
   }
@@ -824,7 +823,7 @@ export class DataTable extends React.Component {
           res2 = Math.min((currentPage + 1) * pageSize, resultsTotal),
           showingResults = `${res1} - ${res2} ${t('of')} ${resultsTotal} ${t('results')}. `,
           selected = this.state.selectedRows,
-          maxPageRes = Math.min(this.state.pageSize, this.state.tableData.length);;
+          maxPageRes = Math.min(this.state.pageSize, this.state.tableData.length);
 
           //
     return (
@@ -862,7 +861,7 @@ export class DataTable extends React.Component {
             </bem.Loading__inner>
           </bem.Loading>
         </ui.Panel>
-        )
+      );
     }
 
     const { tableData, columns, selectedColumns, defaultPageSize, loading, pageSize, currentPage, resultsTotal } = this.state;
@@ -903,7 +902,7 @@ export class DataTable extends React.Component {
                 </bem.PopoverMenu__heading>
                 {VALIDATION_STATUSES_LIST.map((item, n) => {
                   return (
-                    <bem.PopoverMenu__link onClick={this.bulkUpdateStatus} data-value={item.value} key={n}>
+                    <bem.PopoverMenu__link onClick={this.onBulkUpdateStatus} data-value={item.value} key={n}>
                       {item.label}
                       </bem.PopoverMenu__link>
                   );
@@ -971,7 +970,7 @@ export class DataTable extends React.Component {
       </bem.FormView>
     );
   }
-};
+}
 
 reactMixin(DataTable.prototype, Reflux.ListenerMixin);
 reactMixin(DataTable.prototype, mixins.permissions);

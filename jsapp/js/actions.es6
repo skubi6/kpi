@@ -1,5 +1,17 @@
+/**
+ * A bundle file for all Reflux actions. This is the only place that React
+ * components should be talking to Backend.
+ *
+ * You can observe action result through Reflux callbacks in your component, or
+ * more preferably (where applicable) use the update eveont of one of the stores
+ * from `jsapp/js/stores.es6`
+ *
+ * TODO: Group and split actions to separate files. For a working example see `./actions/help`.
+ */
+
 import alertify from 'alertifyjs';
 import {dataInterface} from './dataInterface';
+import helpActions from './actions/help';
 import {
   log,
   t,
@@ -11,8 +23,9 @@ var Reflux = require('reflux');
 import RefluxPromise from './libs/reflux-promise';
 Reflux.use(RefluxPromise(window.Promise));
 
-var actions = {};
+const actions = {};
 
+actions.help = helpActions;
 
 actions.navigation = Reflux.createActions([
     'transitionStart',
@@ -179,6 +192,12 @@ actions.resources = Reflux.createActions({
       'failed'
     ],
   },
+  removeSubmissionValidationStatus: {
+    children: [
+      'completed',
+      'failed'
+    ],
+  },
   getAssetFiles: {
     children: [
       'completed',
@@ -253,7 +272,6 @@ actions.misc = Reflux.createActions({
   },
 });
 
-
 actions.misc.checkUsername.listen(function(username){
   dataInterface.queryUserExistence(username)
     .done(actions.misc.checkUsername.completed)
@@ -315,7 +333,7 @@ actions.resources.createImport.completed.listen(function(contents){
       notify(t('successfully uploaded file; processing may take a few minutes'));
       log('processing import ' + contents.uid, contents);
     } else {
-      notify(`unexpected import status ${contents.status}`, 'error');
+      notify(t('unexpected import status ##STATUS##').replace('##STATUS##', contents.status), 'error');
     }
   } else {
     notify(t('Error: import.status not available'));
@@ -711,6 +729,15 @@ actions.resources.updateSubmissionValidationStatus.listen(function(uid, sid, dat
   }).fail((error)=>{
     console.error(error);
     actions.resources.updateSubmissionValidationStatus.failed(error);
+  });
+});
+
+actions.resources.removeSubmissionValidationStatus.listen((uid, sid) => {
+  dataInterface.removeSubmissionValidationStatus(uid, sid).done((result) => {
+    actions.resources.removeSubmissionValidationStatus.completed(result, sid);
+  }).fail((error)=>{
+    console.error(error);
+    actions.resources.removeSubmissionValidationStatus.failed(error);
   });
 });
 

@@ -9,6 +9,7 @@ $viewTemplates = require './view.templates'
 $viewUtils = require './view.utils'
 $viewChoices = require './view.choices'
 $viewParams = require './view.params'
+$viewMandatorySetting = require './view.mandatorySetting'
 $acceptedFilesView = require './view.acceptedFiles'
 $viewRowDetail = require './view.rowDetail'
 renderKobomatrix = require('js/formbuild/renderInBackbone').renderKobomatrix
@@ -87,6 +88,9 @@ module.exports = do ->
           questionType: questionType
         }).render().insertInDOMAfter(@$header)
 
+      if questionType is 'calculate'
+        @$hint.hide()
+
       if 'getList' of @model and (cl = @model.getList())
         @$card.addClass('card--selectquestion card--expandedchoices')
         @is_expanded = true
@@ -147,7 +151,7 @@ module.exports = do ->
 
     deleteGroup: (evt)=>
       skipConfirm = $(evt.currentTarget).hasClass('js-force-delete-group')
-      if skipConfirm or confirm(_t('Are you sure you want to split apart this group?'))
+      if skipConfirm or confirm(_t("Are you sure you want to split apart this group?"))
         @_deleteGroup()
       evt.preventDefault()
 
@@ -160,13 +164,18 @@ module.exports = do ->
     render: ->
       if !@already_rendered
         @$el.html $viewTemplates.row.groupView(@model)
-        @$label = @$('.group__label').eq(0)
+        @$label = @$('.card__header-title')
         @$rows = @$('.group__rows').eq(0)
         @$card = @$('.card')
         @$header = @$('.card__header,.group__header').eq(0)
 
       @model.rows.each (row)=>
         @getApp().ensureElInView(row, @, @$rows).render()
+
+      if !@already_rendered
+        # only render the row details which are necessary for the initial view (ie 'label')
+        view = new $viewRowDetail.DetailView(model: @model.get('label'), rowView: @)
+        view.render().insertInDOM(@)
 
       @already_rendered = true
       @
@@ -205,7 +214,12 @@ module.exports = do ->
       # don't display columns that start with a $
       hiddenFields = ['label', 'hint', 'type', 'select_from_list_name', 'kobo--matrix_list', 'parameters']
       for [key, val] in @model.attributesArray() when !key.match(/^\$/) and key not in hiddenFields
-        new $viewRowDetail.DetailView(model: val, rowView: @).render().insertInDOM(@)
+        if key is 'required'
+          @mandatorySetting = new $viewMandatorySetting.MandatorySettingView({
+            model: @model.get('required')
+          }).render().insertInDOM(@)
+        else
+          new $viewRowDetail.DetailView(model: val, rowView: @).render().insertInDOM(@)
 
       questionType = @model.get('type').get('typeId')
       if (
@@ -292,7 +306,7 @@ module.exports = do ->
 
       if @model._scoreRows.length < 1
         @model._scoreRows.add
-          label: _t('Enter your question')
+          label: _t("Enter your question")
           name: ''
 
       score_rows = for sr in @model._scoreRows.models
@@ -441,7 +455,6 @@ module.exports = do ->
         cid: model.cid
       template_args.rank_rows = rank_rows
       extra_score_contents = $viewTemplates.$$render('row.rankView', @, template_args)
-      @$('.card--selectquestion__expansion').eq(0).append(extra_score_contents).addClass('js-cancel-select-row')
       @$('.card--selectquestion__expansion').eq(0).append(extra_score_contents).addClass('js-cancel-select-row')
       @editRanks()
     editRanks: ->

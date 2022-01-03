@@ -62,7 +62,7 @@ module.exports = do ->
             <div class="noop card__indicator__icon"><i class="fa fa-fw card__header-icon"></i></div>
           </div>
           <div class="card__text">
-            <input type="text" placeholder="#{_t("Question title is required")}" class="card__header-title js-cancel-select-row js-cancel-sort">
+            <input type="text" placeholder="#{_t("Question label is required")}" class="card__header-title js-cancel-select-row js-cancel-sort">
             <input type="text" placeholder="#{_t("Question hint")}" class="card__header-hint js-cancel-select-row js-cancel-sort">
           </div>
           <div class="card__buttons">
@@ -80,16 +80,16 @@ module.exports = do ->
       #{expandingSpacerHtml}
       """
 
-  groupView = (g)->
+  groupView = ()->
     """
     <div class="survey__row__item survey__row__item--group group card js-select-row">
       <header class="group__header">
         <i class="group__caret js-toggle-group-expansion fa fa-fw fa-caret-down"></i>
-        <span class="group__label js-cancel-select-row js-cancel-sort">#{g.getValue('label')}</span>
-          <div class="group__header__buttons">
-            <span class="group__header__buttons__button group__header__buttons__button--settings js-toggle-card-settings"><i class="fa fa-cog"></i></span>
-            <span class="group__header__buttons__button group__header__buttons__button--delete js-delete-group"><i class="fa fa-trash-o"></i></span>
-          </div>
+        <input type="text" placeholder="#{_t("Group title is required")}" class="card__header-title js-cancel-select-row js-cancel-sort">
+        <div class="group__header__buttons">
+          <span class="group__header__buttons__button group__header__buttons__button--settings js-toggle-card-settings"><i class="fa fa-cog"></i></span>
+          <span class="group__header__buttons__button group__header__buttons__button--delete js-delete-group"><i class="fa fa-trash-o"></i></span>
+        </div>
       </header>
       <ul class="group__rows">
       </ul>
@@ -106,7 +106,7 @@ module.exports = do ->
             <div class="noop card__indicator__icon"><i class="fa fa-fw card__header-icon fa-table"></i></div>
           </div>
           <div class="card__text">
-            <input type="text" placeholder="#{_t("Question title is required")}" class="card__header-title js-cancel-select-row js-cancel-sort">
+            <input type="text" placeholder="#{_t("Question label is required")}" class="card__header-title js-cancel-select-row js-cancel-sort">
           </div>
           <div class="card__buttons">
             <span class="card__buttons__button card__buttons__button--settings card__buttons__button--gray js-toggle-card-settings" data-button-name="settings"><i class="fa fa-cog"></i></span>
@@ -242,10 +242,60 @@ module.exports = do ->
       </ul>
     </div>
     """
+  mandatorySettingSelector = (uniqueName, currentValue) ->
+    if currentValue is 'true' or currentValue is 'false'
+      modifier = currentValue
+    else
+      modifier = 'custom'
+
+    """
+    <div class="card__settings__fields__field">
+      <label>#{_t('Mandatory response')}:</label>
+      <span class="settings__input">
+        <div class="radio">
+          <label class="radio__row mandatory-setting__row mandatory-setting__row--true">
+            <input
+              class="radio__input js-mandatory-setting-radio"
+              type="radio"
+              name="#{uniqueName}"
+              value="true" #{if modifier is 'true' then 'checked' else ''}
+            >
+            <span class="radio__label">#{_t('Yes')}</span>
+          </label>
+          <label class="radio__row mandatory-setting__row mandatory-setting__row--false">
+            <input
+              class="radio__input js-mandatory-setting-radio"
+              type="radio"
+              name="#{uniqueName}"
+              value="false" #{if modifier is 'false' then 'checked' else ''}
+            >
+            <span class="radio__label">#{_t('No')}</span>
+          </label>
+          <label class="radio__row mandatory-setting__row mandatory-setting__row--custom">
+            <input
+              class="radio__input js-mandatory-setting-radio"
+              type="radio"
+              name="#{uniqueName}"
+              value="custom" #{if modifier is 'custom' then 'checked' else ''}
+            >
+            <span class="radio__label">#{_t('Custom logic')}</span>
+            <label class="text-box text-box--on-white">
+              <input
+                type="text"
+                class="text-box__input js-mandatory-setting-custom-text"
+                value="#{currentValue}"
+                placeholder="#{_t('Mandatory when this formula is true')}"
+              >
+            </label>
+          </label>
+        </div>
+      </span>
+    </div>
+    """
 
   paramsSettingsField = ->
     """
-    <div class="card__settings__fields__field">
+    <div class="card__settings__fields__field params-view__settings-wrapper">
       <label>#{_t('Parameters')}:</label>
       <span class="settings__input">
         <div class="params-view"></div>
@@ -285,6 +335,7 @@ module.exports = do ->
 
   xlfRowView: xlfRowView
   expandChoiceList: expandChoiceList
+  mandatorySettingSelector: mandatorySettingSelector
   paramsSettingsField: paramsSettingsField
   paramsSimple: paramsSimple
   selectQuestionExpansion: selectQuestionExpansion

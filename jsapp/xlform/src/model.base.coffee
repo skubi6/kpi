@@ -120,16 +120,7 @@ module.exports = do ->
       # In the quick fix, this is done in the view for 'required' rowDetails
       # (grep: XLF.configs.truthyValues)
 
-      if @key is "required"
-        _val = _innerValue(value)
-        if _.isString(_val)
-          _val = _val.toLowerCase()
-        @set({
-          value: (
-              _val in ['yes', 'true', true]
-            )
-        })
-      else if value not in [undefined, false, null]
+      if value not in [undefined, null]
         vals2set = {}
         if _.isString(value) || _.isNumber(value)
           vals2set.value = value
@@ -161,20 +152,9 @@ module.exports = do ->
       #     @_parent.trigger "change", @key, val, ctxt
 
       # when attributes change, register changes with parent survey
-      observedAttrs = [
-        'name',
-        'label',
-        'hint',
-        'guidance_hint',
-        'required',
-        'read_only'
-        'calculation',
-        'default',
-        'appearance',
-        'constraint_message',
-        'tags'
-      ]
-      if @key in observedAttrs or @key.match(/^.+::.+/)
+      if @key in ["name", "label", "hint", "guidance_hint", "required",
+                  "calculation", "default", "appearance",
+                  "constraint_message", "tags"] or @key.match(/^.+::.+/)
         @on "change", (changes)=>
           @getSurvey().trigger "change", changes
 

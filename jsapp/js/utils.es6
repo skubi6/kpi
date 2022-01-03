@@ -1,7 +1,16 @@
+/**
+ * A collection of miscellaneous utility functions.
+ *
+ * NOTE: these are used also by the Form Builder coffee code (see
+ * `jsapp/xlform/src/view.surveyApp.coffee`)
+ *
+ * TODO: group these functions by what are they doing or where are they mostly
+ * (or uniquely) used, and split to smaller files.
+ */
+
 import clonedeep from 'lodash.clonedeep';
 import moment from 'moment';
 import alertify from 'alertifyjs';
-import $ from 'jquery';
 import {Cookies} from 'react-cookie';
 
 export const LANGUAGE_COOKIE_NAME = 'django_language';
@@ -51,8 +60,13 @@ export function surveyToValidJson(survey) {
   return JSON.stringify(survey.toFlatJSON());
 }
 
-// TRANSLATIONS HACK (Part 2/2):
-// this function reverses nullifying default language - use it just before saving
+
+/**
+ * This function reverses what `nullifyTranslations` did to the form data.
+ * @param {string} surveyDataJSON
+ * @param {object} assetContent
+ * @return {string} fixed surveyDataJSON
+ */
 export function unnullifyTranslations(surveyDataJSON, assetContent) {
   let surveyData = JSON.parse(surveyDataJSON);
 
@@ -61,6 +75,7 @@ export function unnullifyTranslations(surveyDataJSON, assetContent) {
      translatedProps = assetContent.translated;
   }
 
+  // TRANSLATIONS HACK (Part 2/2):
   // set default_language
   let defaultLang = assetContent.translations_0;
   if (!defaultLang) {
@@ -76,7 +91,7 @@ export function unnullifyTranslations(surveyDataJSON, assetContent) {
       surveyData.choices.forEach((choice) => {
         translatedProps.forEach((translatedProp) => {
           if (typeof choice[translatedProp] !== 'undefined') {
-            choice[`${translatedProp}::${defaultLang}`] = choice[translatedProp]
+            choice[`${translatedProp}::${defaultLang}`] = choice[translatedProp];
             delete choice[translatedProp];
           }
         });
@@ -86,7 +101,7 @@ export function unnullifyTranslations(surveyDataJSON, assetContent) {
       surveyData.survey.forEach((surveyRow) => {
         translatedProps.forEach((translatedProp) => {
           if (typeof surveyRow[translatedProp] !== 'undefined') {
-            surveyRow[`${translatedProp}::${defaultLang}`] = surveyRow[translatedProp]
+            surveyRow[`${translatedProp}::${defaultLang}`] = surveyRow[translatedProp];
             delete surveyRow[translatedProp];
           }
         });
@@ -97,6 +112,23 @@ export function unnullifyTranslations(surveyDataJSON, assetContent) {
   return JSON.stringify(surveyData);
 }
 
+/**
+ * @typedef NullifiedTranslations
+ * @property {object} survey - Modified survey.
+ * @property {Array<string|null>} translations - Modified translations.
+ * @property {Array<string|null>} translations_0 - The original default language name.
+ */
+
+/**
+ * A function that adjust the translations data to the Form Builder code.
+ * Requires the sibling `unnullifyTranslations` function to be called before
+ * saving the form.
+ * @param {Array<string|null>} [translations]
+ * @param {Array<string>} translatedProps
+ * @param {object} survey
+ * @param {object} baseSurvey
+ * @return {NullifiedTranslations}
+ */
 export function nullifyTranslations(translations, translatedProps, survey, baseSurvey) {
   const data = {
     survey: clonedeep(survey),
@@ -147,7 +179,7 @@ export function nullifyTranslations(translations, translatedProps, survey, baseS
       data.survey.forEach((row) => {
         translatedProps.forEach((translatedProp) => {
           if (row[translatedProp]) {
-            let propVal = null
+            let propVal = null;
             if (row.name) {
               propVal = row.name;
             } else if (row.$autoname) {
@@ -162,8 +194,8 @@ export function nullifyTranslations(translations, translatedProps, survey, baseS
 
   // no need to nullify null
   if (data.translations[0] !== null) {
-    data.translations_0 = data.translations[0]
-    data.translations[0] = null
+    data.translations_0 = data.translations[0];
+    data.translations[0] = null;
   }
 
   return data;
@@ -223,17 +255,18 @@ window.log = log;
 var __strings = [];
 
 
-/*global gettext*/
+/*a global gettext function*/
+let _gettext;
 if (window.gettext) {
-  var _gettext = window.gettext;
+  _gettext = window.gettext;
 } else {
-  var _gettext = function(s){
+  _gettext = function(s){
     return s;
   };
 }
 export function t(str) {
   return _gettext(str);
-};
+}
 
 
 const originalSupportEmail = 'help@kobotoolbox.org';
@@ -302,7 +335,7 @@ export var randString = function () {
 
 export function stringToColor(str, prc) {
   // Higher prc = lighter color, lower = darker
-  var prc = typeof prc === 'number' ? prc : -15;
+  prc = typeof prc === 'number' ? prc : -15;
   var hash = function(word) {
       var h = 0;
       for (var i = 0; i < word.length; i++) {
@@ -362,10 +395,11 @@ export function validFileTypes() {
 }
 
 export function koboMatrixParser(params) {
+  let content = {};
   if (params.content)
-    var content = JSON.parse(params.content);
+    content = JSON.parse(params.content);
   if (params.source)
-    var content = JSON.parse(params.source);
+    content = JSON.parse(params.source);
 
   if (!content.survey)
     return params;
