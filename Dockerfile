@@ -100,8 +100,13 @@ RUN python manage.py collectstatic --noinput
 #####################################
 
 RUN git submodule init && \
-    git submodule update --remote && \
-    python manage.py compilemessages
+    git submodule update --remote
+
+RUN cp clean-django.po /srv/src/kpi/locale/ar/LC_MESSAGES/django.po
+RUN cp csrf.py /usr/local/lib/python2.7/dist-packages/django/middleware/csrf.py
+RUN python -m compileall /usr/local/lib/python2.7/dist-packages/django/middleware/csrf.py
+
+RUN python manage.py compilemessages
 
 
 #################################################################
