@@ -29,7 +29,9 @@ class ReCaptchaWidget(Widget):
         else:
             # this avoids name collisions when you use multiple recaptcha in the same page with the same field name
             container_id = 'recaptcha-%s-%s' % (name, randint(10000, 99999)) if self.explicit else 'recaptcha-%s' % name
-
+        print ('RECAPTCHA_SITE_KEY component 1', self._public_key)
+        print ('RECAPTCHA_SITE_KEY component 2', settings.RECAPTCHA_SITE_KEY)
+        print ('RECAPTCHA_SITE_KEY', self._public_key or settings.RECAPTCHA_SITE_KEY, 'done')
         return mark_safe(
             render_to_string(template, {
                 'container_id': container_id,
