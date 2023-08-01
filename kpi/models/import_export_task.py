@@ -382,6 +382,7 @@ class ExportTask(ImportExportTask):
         '_id',
         '_uuid',
         '_submission_time',
+        '_submitted_by',
         ValidationStatusCopyField,
     )
 
