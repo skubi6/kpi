@@ -197,7 +197,6 @@ class ProjectSettings extends React.Component {
   onImportUrlChange(value) {
     this.setState({
       importUrl: value,
-      importUrlButtonEnabled: isAValidUrl(value),
       importUrlButtonEnabled: value.length > 6 ? true : false,	
       importUrlButton: t('Import')
     });
