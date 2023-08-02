@@ -12,4 +12,3 @@ locale
 deployments.json
 celerybeat-schedule
 src/
-.git
