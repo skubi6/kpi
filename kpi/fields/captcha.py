@@ -7,7 +7,7 @@ from django.core.exceptions import FieldError
 from shortuuid import ShortUUID
 from rest_framework import serializers
 from rest_framework.reverse import reverse
-from jsonbfield.fields import JSONField as JSONBField
+# from jsonbfield.fields import JSONField as JSONBField
 from rest_framework.pagination import LimitOffsetPagination
 
 import os
