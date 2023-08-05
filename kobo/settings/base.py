@@ -708,6 +708,9 @@ MONGO_DB = MONGO_CONNECTION[MONGO_DATABASE['NAME']]
 
 MONGO_DB_MAX_TIME_MS = CELERY_TASK_TIME_LIMIT * 1000
 
+RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY')
+RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY')
+
 SESSION_ENGINE = "redis_sessions.session"
 SESSION_REDIS = RedisHelper.config(default="redis://redis_cache:6380/2")
 

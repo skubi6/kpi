@@ -18,6 +18,7 @@ import mixins from 'js/mixins';
 import TemplatesList from 'js/components/templatesList';
 import {actions} from 'js/actions';
 import {dataInterface} from 'js/dataInterface';
+import {DebounceInput} from 'react-debounce-input';
 import {
   validFileTypes,
   isAValidUrl,
@@ -71,6 +72,7 @@ class ProjectSettings extends React.Component {
       sector: formAsset ? formAsset.settings.sector : null,
       country: formAsset ? formAsset.settings.country : null,
       'share-metadata': formAsset ? formAsset.settings['share-metadata'] : false,
+      'share-submit': formAsset ? formAsset.settings['share-submit'] : false,
       // steps
       currentStep: null,
       previousStep: null,
@@ -217,10 +219,15 @@ class ProjectSettings extends React.Component {
     this.onAnyDataChange('share-metadata', isChecked);
   }
 
+  onShareSubmitChange(evt) {
+    this.setState({'share-submit': evt.target.checked});
+    this.onAnyDataChange('share-submit', evt.target.checked);
+  }
+
   onImportUrlChange(value) {
     this.setState({
       importUrl: value,
-      importUrlButtonEnabled: isAValidUrl(value),
+      importUrlButtonEnabled: value.length > 6 ? true : false,
       importUrlButton: t('Import')
     });
   }
@@ -417,6 +424,7 @@ class ProjectSettings extends React.Component {
         sector: asset.settings.sector,
         country: asset.settings.country,
         'share-metadata': asset.settings['share-metadata'] || false,
+        'share-submit': asset.settings['share-submit'] || false,
       });
       this.resetApplyTemplateButton();
       this.displayStep(this.STEPS.PROJECT_DETAILS);
@@ -456,7 +464,8 @@ class ProjectSettings extends React.Component {
         description: this.state.description,
         sector: this.state.sector,
         country: this.state.country,
-        'share-metadata': this.state['share-metadata']
+        'share-metadata': this.state['share-metadata'],
+        'share-submit': this.state['share-submit']
       }),
       asset_type: 'survey',
     }).done((asset) => {
@@ -475,7 +484,8 @@ class ProjectSettings extends React.Component {
           description: this.state.description,
           sector: this.state.sector,
           country: this.state.country,
-          'share-metadata': this.state['share-metadata']
+          'share-metadata': this.state['share-metadata'],
+          'share-submit': this.state['share-submit']
         }),
       }
     );
@@ -535,6 +545,7 @@ class ProjectSettings extends React.Component {
                     sector: finalAsset.settings.sector,
                     country: finalAsset.settings.country,
                     'share-metadata': finalAsset.settings['share-metadata'],
+                    'share-submit': finalAsset.settings['share-submit'],
                     isImportFromURLPending: false
                   });
                   this.displayStep(this.STEPS.PROJECT_DETAILS);
@@ -593,6 +604,7 @@ class ProjectSettings extends React.Component {
                     sector: finalAsset.settings.sector,
                     country: finalAsset.settings.country,
                     'share-metadata': finalAsset.settings['share-metadata'],
+                    'share-submit': finalAsset.settings['share-submit'],
                     isUploadFilePending: false
                   });
                   this.displayStep(this.STEPS.PROJECT_DETAILS);
@@ -748,6 +760,14 @@ class ProjectSettings extends React.Component {
             <LoadingSpinner message={t('Uploading file…')}/>
           </div>
         }
+        <DebounceInput
+          type='text'
+          id='importUrl'
+          debounceTimeout={300}
+          value={this.state.importUrl}
+          placeholder='https://'
+          onChange={event => this.onImportUrlChange(event.target.value)}
+        />
 
         <bem.Modal__footer>
           {this.renderBackButton()}
@@ -897,6 +917,18 @@ class ProjectSettings extends React.Component {
               onChange={this.onShareMetadataChange}
               label={t('Help KoboToolbox improve this product by sharing the sector and country where this project will be deployed.') + ' ' + t('All the information is submitted anonymously, and will not include the project name or description listed above.')}
             />
+          </bem.FormModal__item>
+
+          <bem.FormModal__item m='submit-share'>
+            <input
+              type='checkbox'
+              id='share-submit'
+              checked={this.state['share-submit']}
+              onChange={this.onShareSubmitChange}
+            />
+            <label htmlFor='share-submit'>
+              {t('Accept data from any authorized user.')}
+            </label>
           </bem.FormModal__item>
 
           {(this.props.context === PROJECT_SETTINGS_CONTEXTS.NEW || this.props.context === PROJECT_SETTINGS_CONTEXTS.REPLACE) &&
