@@ -1,13 +1,12 @@
 FROM python:3.10 as build-python
 
-ENV VIRTUAL_ENV=/opt/venv \
-    TMP_DIR=/srv/tmp
+ENV VIRTUAL_ENV=/opt/venv
 
 RUN python -m venv "$VIRTUAL_ENV"
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install --quiet pip-tools==6.\*
-COPY ./dependencies/pip/requirements.txt "${TMP_DIR}/pip_dependencies.txt"
-RUN pip-sync "${TMP_DIR}/pip_dependencies.txt" 1>/dev/null
+COPY ./dependencies/pip/requirements.txt "/tmp/pip_dependencies.txt"
+RUN pip-sync "/tmp/pip_dependencies.txt" 1>/dev/null
 
 
 from python:3.10-slim
