@@ -873,6 +873,9 @@ MONGO_DB = mongo_client[mongo_db_name]
 MONGO_QUERY_TIMEOUT = SYNCHRONOUS_REQUEST_TIME_LIMIT + 5  # seconds
 MONGO_CELERY_QUERY_TIMEOUT = CELERY_TASK_TIME_LIMIT + 10  # seconds
 
+RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY')
+RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY')
+
 SESSION_ENGINE = 'redis_sessions.session'
 # django-redis-session expects a dictionary with `url`
 redis_session_url = env.cache_url(

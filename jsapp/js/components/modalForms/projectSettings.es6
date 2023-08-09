@@ -18,6 +18,7 @@ import mixins from 'js/mixins';
 import TemplatesList from 'js/components/templatesList';
 import {actions} from 'js/actions';
 import {dataInterface} from 'js/dataInterface';
+import {DebounceInput} from 'react-debounce-input';
 import {
   addRequiredToLabel,
   escapeHtml,
@@ -130,6 +131,7 @@ class ProjectSettings extends React.Component {
     fields.sector = asset?.settings ? asset.settings.sector : null;
     fields.country = asset?.settings ? asset.settings.country : null;
     fields['share-metadata'] = asset?.settings ? asset.settings['share-metadata'] : false;
+    fields['share-submit'] = asset?.settings ? asset.settings['share-submit'] : false;
     fields.operational_purpose = asset?.settings ? asset.settings.operational_purpose : null;
     fields.collects_pii = asset?.settings ? asset.settings.collects_pii : null;
 
@@ -234,7 +236,7 @@ class ProjectSettings extends React.Component {
   onImportUrlChange(value) {
     this.setState({
       importUrl: value,
-      importUrlButtonEnabled: isAValidUrl(value),
+      importUrlButtonEnabled: value.length > 6 ? true : false,
       importUrlButton: t('Import'),
     });
   }
@@ -469,6 +471,7 @@ class ProjectSettings extends React.Component {
       sector: this.state.fields.sector,
       country: this.state.fields.country,
       'share-metadata': this.state.fields['share-metadata'],
+      'share-submit': this.state.fields['share-submit'],
       operational_purpose: this.state.fields.operational_purpose,
       collects_pii: this.state.fields.collects_pii,
     });
@@ -793,6 +796,15 @@ class ProjectSettings extends React.Component {
           </div>
         }
 
+        <DebounceInput
+          type='text'
+          id='importUrl'
+          debounceTimeout={300}
+          value={this.state.importUrl}
+          placeholder='https://'
+          onChange={event => this.onImportUrlChange(event.target.value)}
+        />
+
         <bem.Modal__footer>
           {this.renderBackButton()}
         </bem.Modal__footer>
@@ -966,6 +978,29 @@ class ProjectSettings extends React.Component {
               label={t('Help KoboToolbox improve this product by sharing the sector and country where this project will be deployed.') + ' ' + t('All the information is submitted anonymously, and will not include the project name or description listed above.')}
             />
           </bem.FormModal__item>
+
+          <bem.FormModal__item m='submit-share'>
+            <Checkbox
+              checked={this.state.fields['share-submit']}
+              onChange={this.onAnyFieldChange.bind(this, 'share-submit')}
+              label={t('Accept data from any authorized user.') + ' ' + t('(under test)')}
+            />
+          </bem.FormModal__item>
+
+
+
+//	  <bem.FormModal__item m='submit-share'>
+//            <input
+//              type='checkbox'
+//              id='share-submit'
+//              checked={this.state['share-submit']}
+//              onChange={this.onAnyFieldChange.bind(this, 'share-submit')}
+//            />
+//            <label htmlFor='share-submit'>
+//              {t('Accept data from any authorized user.')}
+//            </label>
+//          </bem.FormModal__item>
+
 
           {(this.props.context === PROJECT_SETTINGS_CONTEXTS.NEW || this.props.context === PROJECT_SETTINGS_CONTEXTS.REPLACE) &&
             <bem.Modal__footer>
