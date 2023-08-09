@@ -987,21 +987,6 @@ class ProjectSettings extends React.Component {
             />
           </bem.FormModal__item>
 
-
-
-//	  <bem.FormModal__item m='submit-share'>
-//            <input
-//              type='checkbox'
-//              id='share-submit'
-//              checked={this.state['share-submit']}
-//              onChange={this.onAnyFieldChange.bind(this, 'share-submit')}
-//            />
-//            <label htmlFor='share-submit'>
-//              {t('Accept data from any authorized user.')}
-//            </label>
-//          </bem.FormModal__item>
-
-
           {(this.props.context === PROJECT_SETTINGS_CONTEXTS.NEW || this.props.context === PROJECT_SETTINGS_CONTEXTS.REPLACE) &&
             <bem.Modal__footer>
               {/* Don't allow going back if asset already exist */}
