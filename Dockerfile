@@ -4,8 +4,9 @@ ENV VIRTUAL_ENV=/opt/venv
 
 RUN python -m venv "$VIRTUAL_ENV"
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip install --quiet pip-tools==6.\*
-COPY ./dependencies/pip/requirements.txt "/tmp/pip_dependencies.txt"
+RUN pip install --quiet pip==22.0.4 && \
+    pip install --quiet pip-tools
+COPY ./dependencies/pip/external_services.txt "/tmp/pip_dependencies.txt"
 RUN pip-sync "/tmp/pip_dependencies.txt" 1>/dev/null
 
 
@@ -106,8 +107,6 @@ WORKDIR ${KPI_SRC_DIR}/
 RUN rm -rf ${KPI_NODE_PATH} && \
     npm install -g npm@8.5.5 && \
     npm install -g check-dependencies && \
-    rm -rf "${KPI_SRC_DIR}/jsapp/fonts" && \
-    rm -rf "${KPI_SRC_DIR}/jsapp/compiled" && \
     npm install --quiet && \
     npm cache clean --force
 
@@ -117,7 +116,9 @@ ENV PATH $PATH:${KPI_NODE_PATH}/.bin
 # Build client code. #
 ######################
 
-RUN npm run build
+RUN rm -rf "${KPI_SRC_DIR}/jsapp/fonts" && \
+    rm -rf "${KPI_SRC_DIR}/jsapp/compiled" && \
+    npm run copy-fonts && npm run build
 
 ###########################
 # Organize static assets. #
