@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as t
 from registration import forms as registration_forms
 
 from kobo.static_lists import COUNTRIES
+from kpi.fields.captcha import ReCaptchaField
 
 USERNAME_REGEX = r'^[a-z][a-z0-9_]+$'
 USERNAME_MAX_LENGTH = 30
@@ -61,6 +62,8 @@ class RegistrationForm(registration_forms.RegistrationForm):
         choices=(('', ''),) + COUNTRIES,
     )
 
+    captcha = ReCaptchaField()
+
     class Meta:
         model = User
         fields = [
@@ -71,6 +74,7 @@ class RegistrationForm(registration_forms.RegistrationForm):
             'sector',
             'country',
             'gender',
+	    'captcha',
             # The 'password' field appears without adding it here; adding it
             # anyway results in a duplicate
         ]
