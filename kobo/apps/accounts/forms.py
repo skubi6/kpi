@@ -16,7 +16,7 @@ from django.utils.translation import gettext_lazy as t
 
 from hub.utils.i18n import I18nUtils
 from kobo.static_lists import COUNTRIES, USER_METADATA_DEFAULT_LABELS
-
+from kpi.fields.captcha import ReCaptchaField
 
 # Only these fields can be controlled by constance.config.USER_METADATA_FIELDS
 CONFIGURABLE_METADATA_FIELDS = (
@@ -66,6 +66,8 @@ class KoboSignupMixin(forms.Form):
         required=False,
         choices=(('', ''),) + COUNTRIES,
     )
+
+    captcha = ReCaptchaField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

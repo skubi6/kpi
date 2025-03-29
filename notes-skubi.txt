@@ -1,0 +1,13 @@
+Ignored from 2.022.44-oworgpl:
+
+@@ -249,7 +251,7 @@ class ProjectSettings extends React.Component {
+   onImportUrlChange(value) {
+     this.setState({
+       importUrl: value,
+-      importUrlButtonEnabled: isAValidUrl(value),
++      importUrlButtonEnabled: value.length > 6 ? true : false,
+       importUrlButton: t('Import'),
+     });
+   }
+
+
